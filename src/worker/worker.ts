@@ -5,6 +5,7 @@ import { ApplicationServices } from "../services/ApplicationServices.ts";
 import { isAuthorized } from "./auth.ts";
 import type { D1Database } from "./d1.ts";
 import { NutritionStore } from "./NutritionStore.ts";
+import { ensureSchema } from "./schema.ts";
 import { registerNutritionTools } from "./NutritionTools.ts";
 
 export interface Env {
@@ -44,6 +45,7 @@ export default {
 			return jsonError(401, "Unauthorized");
 		}
 
+		await ensureSchema(env.DB);
 		applicationServices ??= new ApplicationServices();
 		const server = new McpServer(
 			{ name: "fitatu-mcp", version: "3.0.1-worker" },
