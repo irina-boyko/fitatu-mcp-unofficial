@@ -16,9 +16,9 @@
 		{
 			"binding": "DB",
 			"database_name": "fitatu-nutrition",
-			"database_id": "REPLACE_WITH_ID_FROM_wrangler_d1_create",
 			"migrations_dir": "migrations"
 		}
 	]
+	// database_id is omitted on purpose: `wrangler deploy` provisions the D1 database automatically.
 	// Secrets (never commit them): wrangler secret put FITATU_EMAIL / FITATU_PASSWORD / MCP_AUTH_TOKEN
 }

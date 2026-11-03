@@ -9,12 +9,18 @@ server as a custom connector. The Fitatu code is unchanged; the worker adds:
   `recipes_save`, `recipes_search`, `recipes_get`, `recipes_delete`, `recipes_export` (JSON/CSV),
   `products_save`, `products_search`. Recipe totals, per-100 g and per-serving values are computed server-side.
 
-## Deploy (free Workers plan)
+## Deploy from the Cloudflare dashboard (no local tools)
+
+1. Workers & Pages → Create → Import a repository → this fork; production branch `cloudflare-worker`.
+2. Build command: empty. Deploy command: `npx wrangler deploy` (default). The D1 database is created automatically on first deploy.
+3. After the first deploy: Worker → Settings → Variables and Secrets → add secrets `FITATU_EMAIL`, `FITATU_PASSWORD`,
+   `MCP_AUTH_TOKEN` (32+ random characters). Tables are created on the first request.
+
+## Deploy from a terminal (free Workers plan)
 
 ```bash
 npm install
 npx wrangler login
-npx wrangler d1 create fitatu-nutrition        # copy database_id into wrangler.jsonc
 npx wrangler d1 migrations apply fitatu-nutrition --remote
 npx wrangler secret put FITATU_EMAIL
 npx wrangler secret put FITATU_PASSWORD         # typed into the terminal prompt only
