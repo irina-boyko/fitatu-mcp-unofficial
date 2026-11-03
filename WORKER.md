@@ -33,7 +33,7 @@ Claude needs it once, when the connector is added.
 
 ## Connect Claude (once, on claude.ai in a browser)
 
-Customize → Connectors → Add custom connector → URL `https://fitatu-mcp.<your-subdomain>.workers.dev/mcp`,
+Customize → Connectors → Add custom connector → URL `https://fitatu-mcp-unofficial.<your-subdomain>.workers.dev/mcp`,
 authentication: request header `Authorization: Bearer <MCP_AUTH_TOKEN>`. The connector then appears in the iPhone app.
 
 ## Local development
