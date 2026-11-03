@@ -1,0 +1,24 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "fitatu-mcp",
+	"main": "src/worker/worker.ts",
+	"compatibility_date": "2026-10-01",
+	"compatibility_flags": ["nodejs_compat"],
+	"alias": {
+		"pino": "./src/worker/pinoShim.ts"
+	},
+	"observability": { "enabled": true },
+	"vars": {
+		"NODE_ENV": "production",
+		"LOG_LEVEL": "warn"
+	},
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "fitatu-nutrition",
+			"database_id": "REPLACE_WITH_ID_FROM_wrangler_d1_create",
+			"migrations_dir": "migrations"
+		}
+	]
+	// Secrets (never commit them): wrangler secret put FITATU_EMAIL / FITATU_PASSWORD / MCP_AUTH_TOKEN
+}

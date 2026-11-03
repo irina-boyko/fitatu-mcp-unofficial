@@ -154,3 +154,5 @@ vite.config.ts.timestamp-*
 /PYTHON_REFERENCE_ENDPOINTS.md
 /.agents/*
 /skills-lock.json
+.dev.vars
+.wrangler/
