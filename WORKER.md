@@ -11,7 +11,7 @@ server as a custom connector. The Fitatu code is unchanged; the worker adds:
 
 ## Deploy from the Cloudflare dashboard (no local tools)
 
-1. Workers & Pages → Create → Import a repository → this fork; production branch `cloudflare-worker`.
+1. Workers & Pages → Create → Import a repository → this fork. Then Settings → Build → Branch control: production branch `cloudflare-worker` (the default `main` has no Worker code). A build stuck on "Initializing" can be cancelled and restarted.
 2. Build command: empty. Deploy command: `npx wrangler deploy` (default). The D1 database is created automatically on first deploy.
 3. After the first deploy: Worker → Settings → Variables and Secrets → add secrets `FITATU_EMAIL`, `FITATU_PASSWORD`,
    `MCP_AUTH_TOKEN` (32+ random characters). Tables are created on the first request.
