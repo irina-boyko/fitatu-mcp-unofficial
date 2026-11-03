@@ -61,3 +61,12 @@ describe("normalizeName", () => {
 		expect(normalizeName("Ёжик")).toBe(normalizeName("ежик"));
 	});
 });
+
+describe("energyMismatchWarning", () => {
+	it("accepts consistent labels and flags misread ones", async () => {
+		const { energyMismatchWarning } = await import("./FitatuProductTools.ts");
+		expect(energyMismatchWarning(209, 16, 8.6, 17)).toBeUndefined();
+		expect(energyMismatchWarning(71, 4.4, 3, 6.5)).toBeUndefined();
+		expect(energyMismatchWarning(71, 0, 3, 6.5)).toBeDefined();
+	});
+});
