@@ -32,7 +32,8 @@ export abstract class FitatuApiClientBase {
 		const resolvedOptions = new FitatuApiClientBaseOptions(options);
 		this.fallbackBaseUrl = normalizeBaseUrl(resolvedOptions.baseUrl ?? DEFAULT_FITATU_API_BASE_URL);
 		this.hasExplicitBaseUrl = Boolean(resolvedOptions.baseUrl);
-		this.fetchFn = resolvedOptions.fetchFn ?? fetch;
+		// Wrap the global fetch: Cloudflare Workers throws "Illegal invocation" when fetch is called as a method of another object.
+		this.fetchFn = resolvedOptions.fetchFn ?? ((input, init) => fetch(input, init));
 		this.authClient = resolvedOptions.authClient;
 		this.userClient = resolvedOptions.userClient;
 		this.mobileClientProfile = resolvedOptions.mobileClientProfile ?? DEFAULT_FITATU_MOBILE_CLIENT_PROFILE;
