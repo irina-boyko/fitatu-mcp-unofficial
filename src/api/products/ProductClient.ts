@@ -74,4 +74,44 @@ export class ProductClient extends FitatuApiClientBase {
 			},
 		});
 	}
+
+	/** Reads the raw product (GET /products/:id) so callers can check name and ownership before deleting. */
+	public async getProduct(
+		productId: string,
+	): Promise<{ readonly id: string; readonly name: string; readonly userId: string | null }> {
+		return this.performCallout({
+			operation: FITATU_CLIENT_OPERATIONS.productsGet,
+			method: "GET",
+			path: `/products/${encodeURIComponent(productId)}`,
+			endpointTemplate: "/products/:productId",
+			failureMessage: "Fitatu product request failed",
+			invalidResponseMessage: "Fitatu product response was invalid",
+			headers: { accept: "application/json" },
+			decoder: (data) => {
+				if (!ObjectUtils.isRecord(data) || typeof data.name !== "string") {
+					throw new FitatuResponseDecodeError("Product response did not contain a name");
+				}
+				const owner = data.userId ?? data.ownerId ?? null;
+				return {
+					id: String(data.id ?? productId),
+					name: data.name,
+					userId: owner === null || owner === undefined ? null : String(owner),
+				};
+			},
+		});
+	}
+
+	/** Deletes a private user product (DELETE /products/:id), as the Fitatu app does from "My products". */
+	public async deleteProduct(productId: string): Promise<void> {
+		await this.performCallout({
+			operation: FITATU_CLIENT_OPERATIONS.productsDelete,
+			method: "DELETE",
+			path: `/products/${encodeURIComponent(productId)}`,
+			endpointTemplate: "/products/:productId",
+			failureMessage: "Fitatu product deletion failed",
+			invalidResponseMessage: "Fitatu product deletion response was invalid",
+			headers: { accept: "application/json" },
+			decoder: () => null,
+		});
+	}
 }

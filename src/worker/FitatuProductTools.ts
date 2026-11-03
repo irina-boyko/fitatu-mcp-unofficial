@@ -82,4 +82,53 @@ export function registerFitatuProductTools(server: McpServer, client = ProductCl
 			}
 		},
 	);
+
+	server.registerTool(
+		"delete_fitatu_product",
+		{
+			title: "Delete Fitatu product",
+			description:
+				"Deletes a private product the user created in Fitatu (\"My products\"). Requires the productId and the exact current product name as confirmation; the name is checked against Fitatu before deleting. Only for the user's own products, never public catalog items. Ask the user first and make sure no recipe still uses the product. Returns { status: 'deleted', productId, name }.",
+			inputSchema: {
+				productId: z.string().trim().regex(/^\d+$/),
+				expectedName: z.string().min(1),
+			},
+			annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: true },
+		},
+		async ({ productId, expectedName }) => {
+			try {
+				const product = await client.getProduct(productId);
+				if (product.name !== expectedName) {
+					return {
+						isError: true,
+						content: [
+							{
+								type: "text",
+								text: `Product ${productId} is named "${product.name}", not "${expectedName}"; nothing was deleted.`,
+							},
+						],
+					};
+				}
+				await client.deleteProduct(productId);
+				return {
+					content: [
+						{
+							type: "text",
+							text: JSON.stringify({ status: "deleted", productId, name: product.name }, null, 2),
+						},
+					],
+				};
+			} catch (error) {
+				return {
+					isError: true,
+					content: [
+						{
+							type: "text",
+							text: error instanceof Error ? error.message : "Fitatu product deletion failed",
+						},
+					],
+				};
+			}
+		},
+	);
 }
