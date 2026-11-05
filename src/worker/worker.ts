@@ -4,6 +4,7 @@ import { registerFitatuTools } from "../createServer.ts";
 import { ApplicationServices } from "../services/ApplicationServices.ts";
 import { isAuthorized } from "./auth.ts";
 import type { D1Database } from "./d1.ts";
+import { registerFitatuActivityTools } from "./FitatuActivityTools.ts";
 import { registerFitatuProductTools } from "./FitatuProductTools.ts";
 import { NutritionStore } from "./NutritionStore.ts";
 import { ensureSchema } from "./schema.ts";
@@ -54,6 +55,7 @@ export default {
 		);
 		registerFitatuTools(server, applicationServices);
 		registerFitatuProductTools(server);
+		registerFitatuActivityTools(server);
 		registerNutritionTools(server, new NutritionStore(env.DB));
 
 		// Stateless mode: Workers isolates do not share memory, so each request gets a fresh transport.
