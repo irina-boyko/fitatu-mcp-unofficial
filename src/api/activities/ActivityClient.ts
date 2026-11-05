@@ -45,6 +45,8 @@ interface ActivityWriteRow {
 }
 
 const MINUTES_MEASURE_ID = 1;
+// Measure ids seen for TIME (minutes) measures: 1 is the generic one, 3 is "Minuty" on catalog activities such as Tenis.
+const TIME_MEASURE_IDS: ReadonlySet<number> = new Set([MINUTES_MEASURE_ID, 3]);
 
 /**
  * Trainings (activities) in the Fitatu planner. They travel in the same day sync as meals
@@ -133,7 +135,7 @@ export class ActivityClient extends FitatuApiClientBase {
 							energy: numberOrNull(row.energy),
 							planDayActivityType: numberOrNull(row.planDayActivityType),
 							minutes:
-								simpleMeasure && simpleMeasure.measureId === MINUTES_MEASURE_ID
+								simpleMeasure && TIME_MEASURE_IDS.has(simpleMeasure.measureId)
 									? simpleMeasure.value
 									: null,
 							simpleMeasure,
