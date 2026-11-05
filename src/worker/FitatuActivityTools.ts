@@ -81,13 +81,13 @@ export function registerFitatuActivityTools(server: McpServer, client = Activity
 				"Logs a training on a day: a catalog activityId from search_activities with the measureId of its TIME measure (timeMeasureId), its duration in minutes and the burned energy in kcal (Fitatu stores the kcal exactly as sent). Read get_day_activities first; repeating the call adds a second entry. The day is re-read and the result says whether the activity is there.",
 			inputSchema: {
 				date: isoDate,
-				activityId: z.number().int().positive(),
-				minutes: z
+				activityId: z.coerce.number().int().positive(),
+				minutes: z.coerce
 					.number()
 					.positive()
 					.max(24 * 60),
-				energyKcal: z.number().positive().max(5000),
-				timeMeasureId: z
+				energyKcal: z.coerce.number().positive().max(5000),
+				timeMeasureId: z.coerce
 					.number()
 					.int()
 					.positive()
