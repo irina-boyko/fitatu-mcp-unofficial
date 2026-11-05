@@ -3,6 +3,7 @@ import { FitatuAuthClient } from "../auth/FitatuAuthClient.ts";
 import { createPlanDayDietItemId } from "../dayPlan/DayPlanItemIdFactory.ts";
 import { FitatuApiClientBase } from "../fitatuApiClientBase/FitatuApiClientBase.ts";
 import type { FitatuApiClientBaseOptions } from "../fitatuApiClientBase/FitatuApiClientBaseOptions.ts";
+import { FitatuClientError } from "../fitatuApiClientBase/FitatuClientError.ts";
 import { FITATU_CLIENT_OPERATIONS } from "../fitatuApiClientBase/FitatuClientOperations.ts";
 import { FitatuResponseDecodeError } from "../fitatuApiClientBase/FitatuResponseDecodeError.ts";
 
@@ -143,13 +144,19 @@ export class ActivityClient extends FitatuApiClientBase {
 	}
 
 	/** Logs a catalog activity; Fitatu stores the given energy as is and does not recompute it. */
-	public async add(date: string, activityId: number, minutes: number, energyKcal: number): Promise<string> {
+	public async add(
+		date: string,
+		activityId: number,
+		minutes: number,
+		energyKcal: number,
+		timeMeasureId = MINUTES_MEASURE_ID,
+	): Promise<string> {
 		const row: ActivityWriteRow = {
 			uuid: createPlanDayDietItemId(),
 			planDayActivityType: 1,
 			activityId,
 			energy: Math.round(energyKcal),
-			simpleMeasure: { measureId: MINUTES_MEASURE_ID, value: minutes },
+			simpleMeasure: { measureId: timeMeasureId, value: minutes },
 			advancedMeasures: [],
 			deletedAt: null,
 		};
@@ -172,12 +179,37 @@ export class ActivityClient extends FitatuApiClientBase {
 	}
 
 	private async sync(date: string, row: ActivityWriteRow): Promise<void> {
-		const userId = await this.userId();
+		const userId = encodeURIComponent(await this.userId());
+		const variants: readonly [string, string][] = [
+			[`/diet-plan/${userId}/days`, "/diet-plan/:userId/days"],
+			[`/v2/diet-plan/${userId}/days`, "/v2/diet-plan/:userId/days"],
+			[`/v3/diet-plan/${userId}/days`, "/v3/diet-plan/:userId/days"],
+		];
+		let lastError: unknown;
+		for (const [path, endpointTemplate] of variants) {
+			try {
+				await this.post(path, endpointTemplate, date, row);
+				return;
+			} catch (error) {
+				lastError = error;
+				if (
+					!(error instanceof FitatuClientError) ||
+					error.failure.kind !== "http" ||
+					error.failure.statusCode !== 404
+				) {
+					throw error;
+				}
+			}
+		}
+		throw lastError;
+	}
+
+	private async post(path: string, endpointTemplate: string, date: string, row: ActivityWriteRow): Promise<void> {
 		await this.performCallout({
 			operation: FITATU_CLIENT_OPERATIONS.activitiesSync,
 			method: "POST",
-			path: `/diet-plan/${encodeURIComponent(userId)}/days`,
-			endpointTemplate: "/diet-plan/:userId/days",
+			path,
+			endpointTemplate,
 			failureMessage: "Fitatu activity synchronization failed",
 			invalidResponseMessage: "Fitatu activity synchronization response was invalid",
 			headers: { "content-type": "application/json;charset=UTF-8" },

@@ -1,6 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { ActivityClient } from "../api/activities/ActivityClient.ts";
+import { FitatuClientError } from "../api/fitatuApiClientBase/FitatuClientError.ts";
 
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 
@@ -8,10 +9,27 @@ function ok(value: unknown) {
 	return { content: [{ type: "text" as const, text: JSON.stringify(value, null, 2) }] };
 }
 
+function describe(error: unknown, fallback: string): string {
+	if (!(error instanceof Error)) {
+		return fallback;
+	}
+	const parts = [error.message];
+	if (error instanceof FitatuClientError && error.failure.kind === "http") {
+		const f = error.failure;
+		parts.push(`HTTP ${f.statusCode} ${f.method} ${f.endpointTemplate}`);
+		if (f.upstreamMessage) parts.push(f.upstreamMessage);
+		if (f.responseSnippet) parts.push(f.responseSnippet);
+	}
+	if (error.cause instanceof Error) {
+		parts.push(error.cause.message);
+	}
+	return parts.join(" | ");
+}
+
 function fail(error: unknown, fallback: string) {
 	return {
 		isError: true,
-		content: [{ type: "text" as const, text: error instanceof Error ? error.message : fallback }],
+		content: [{ type: "text" as const, text: describe(error, fallback) }],
 	};
 }
 
@@ -60,7 +78,7 @@ export function registerFitatuActivityTools(server: McpServer, client = Activity
 		{
 			title: "Add Fitatu activity",
 			description:
-				"Logs a training on a day: a catalog activityId from search_activities, its duration in minutes and the burned energy in kcal (Fitatu stores the kcal exactly as sent). Read get_day_activities first; repeating the call adds a second entry. The day is re-read and the result says whether the activity is there.",
+				"Logs a training on a day: a catalog activityId from search_activities with the measureId of its TIME measure (timeMeasureId), its duration in minutes and the burned energy in kcal (Fitatu stores the kcal exactly as sent). Read get_day_activities first; repeating the call adds a second entry. The day is re-read and the result says whether the activity is there.",
 			inputSchema: {
 				date: isoDate,
 				activityId: z.number().int().positive(),
@@ -69,12 +87,20 @@ export function registerFitatuActivityTools(server: McpServer, client = Activity
 					.positive()
 					.max(24 * 60),
 				energyKcal: z.number().positive().max(5000),
+				timeMeasureId: z
+					.number()
+					.int()
+					.positive()
+					.optional()
+					.describe(
+						"measureId of the activity's TIME measure from search_activities (e.g. 3 for Tenis). Defaults to 1.",
+					),
 			},
 			annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
 		},
-		async ({ date, activityId, minutes, energyKcal }) => {
+		async ({ date, activityId, minutes, energyKcal, timeMeasureId }) => {
 			try {
-				const uuid = await client.add(date, activityId, minutes, energyKcal);
+				const uuid = await client.add(date, activityId, minutes, energyKcal, timeMeasureId);
 				const after = await client.listDay(date);
 				const added = after.find((a) => a.uuid === uuid) ?? null;
 				return ok({ status: added ? "confirmed" : "not_found_after_sync", date, uuid, activity: added });
